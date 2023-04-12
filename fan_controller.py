@@ -11,9 +11,11 @@ from PIL import Image
 import sys
 import argparse
 
+
 def init_console() -> Console:
     custom_theme = Theme({"bar.finished": "cyan", "bar.complete": "cyan", "progress.percentage": "yellow"})
     return Console(theme=custom_theme)
+
 
 def init_pwm(frequency: int, max_duty: int) -> PWM:
     GPIO_PIN = 12
@@ -23,12 +25,15 @@ def init_pwm(frequency: int, max_duty: int) -> PWM:
     pwm.start(max_duty)
     return pwm
 
+
 def init_display() -> InkyWHAT:
     return InkyWHAT("yellow")
+
 
 class DisplayContent(object):
     display: InkyWHAT = InkyWHAT("yellow")
     image: Image = Image.new("P", (display.width, display.height))
+
 
 def fan_controller(max_duty: int, min_duty: int, frequency: int, pause: float, interval: float, verbose: bool):
     console = init_console()
@@ -53,6 +58,7 @@ def fan_controller(max_duty: int, min_duty: int, frequency: int, pause: float, i
                 sleep(interval)
             sleep(pause)
 
+
 def main(argv: list[str]):
     parser = argparse.ArgumentParser(prog="Fan Controller", description="Controls fans")
     parser.add_argument("-m", "--max", type=int, default=100, help="maximum duty cycle")
@@ -68,6 +74,7 @@ def main(argv: list[str]):
         fan_controller(args.max, args.min, args.frequency, args.pause, args.interval, args.verbose)
     except KeyboardInterrupt:
         return
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
