@@ -1,0 +1,5 @@
+black
+pyright
+pytest
+inky[rpi,example-depends]
+rich

@@ -1,0 +1,10 @@
+[project]
+name = "Fan Controller"
+version = "1.0.0"
+[tool.black]
+line-length = 160
+target-version = ['py39']
+include = '\.pyi?$'
+[tool.pyright]
+pythonVersion = "3.9"
+typeCheckingMode = "strict"
