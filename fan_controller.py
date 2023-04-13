@@ -7,7 +7,8 @@ from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn
 from rich.theme import Theme
 from rich.console import Console
 from inky import InkyWHAT
-from PIL import Image
+from PIL import Image, ImageFont, ImageDraw
+from font_source_sans_pro import SourceSansProSemibold
 import sys
 import argparse
 
@@ -26,19 +27,27 @@ def init_pwm(frequency: int, max_duty: int) -> PWM:
     return pwm
 
 
-def init_display() -> InkyWHAT:
-    return InkyWHAT("yellow")
-
-
 class DisplayContent(object):
-    display: InkyWHAT = InkyWHAT("yellow")
+    display: InkyWHAT = InkyWHAT("black")
     image: Image = Image.new("P", (display.width, display.height))
+    draw: ImageDraw = ImageDraw.Draw(image)
+    FONT_SIZE: int = 24
+    font: ImageFont = ImageFont.truetype(SourceSansProSemibold, FONT_SIZE)
+
+
+    def draw_text(self, text: str):
+        x = 0
+        y = 0
+        self.draw.rectangle((0, 0, self.display.width, self.display.height), fill=(0, 0, 0, 0))
+        self.draw.multiline_text((x, y), text, fill=self.display.BLACK, font=self.font, align="left")
+        self.display.set_image(self.image)
+        self.display.show()
 
 
 def fan_controller(max_duty: int, min_duty: int, frequency: int, pause: float, interval: float, verbose: bool):
     console = init_console()
     pwm = init_pwm(frequency, max_duty)
-    display = init_display()
+    display = DisplayContent()
 
     with Progress(TextColumn("{task.description}"), BarColumn(), TaskProgressColumn(), console=console) as progress:
         task = progress.add_task("[bold]Fan Speed[/bold]", total=100)
@@ -48,6 +57,7 @@ def fan_controller(max_duty: int, min_duty: int, frequency: int, pause: float, i
                     print(f"duty: {duty}")
                 pwm.ChangeDutyCycle(duty)
                 progress.update(task, completed=duty)
+                display.draw_text(f"Fan Speed: {duty}")
                 sleep(interval)
             sleep(pause)
             for duty in range(min_duty, max_duty + 1):
@@ -55,6 +65,7 @@ def fan_controller(max_duty: int, min_duty: int, frequency: int, pause: float, i
                     print(f"duty: {duty}")
                 pwm.ChangeDutyCycle(duty)
                 progress.update(task, completed=duty)
+                display.draw_text(f"Fan Speed: {duty}")
                 sleep(interval)
             sleep(pause)
 
