@@ -1,145 +1,72 @@
 #!/usr/bin/env python3
 
-from RPi import GPIO
 from time import sleep
-from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn
-from rich.theme import Theme
-from rich.console import Console
-from inky import InkyWHAT
-from PIL import Image, ImageFont, ImageDraw
-from font_source_sans_pro import SourceSansProSemibold
-from enum import Enum, auto
 import sys
 import argparse
+from RotaryEncoder import RotaryEncoder
+from FanDisplay import FanDisplay
+from PowerButton import PowerButton
+from FanController import FanController
+from PWMChannel import PWMChannel
+from ProgressBar import ProgressBar
+import pigpio
 
 
-def init_console() -> Console:
-    custom_theme = Theme({"bar.finished": "cyan", "bar.complete": "cyan", "progress.percentage": "yellow"})
-    return Console(theme=custom_theme)
+def init_gpio(silent: bool) -> pigpio.pi:
+    return pigpio.pi()
 
 
-def init_gpio(silent: bool):
-    GPIO.setwarnings(not silent)
-    GPIO.setmode(GPIO.BCM)
+def fan_controller(max_duty: float, min_duty: float, frequency: int, refresh: float, increment: float, verbose: bool, silent: bool, graphical: bool):
+    PWM_PIN = 12
+    BUTTON_PIN = 4
+    RELAY_PIN = 6
+    CLK_PIN = 16
+    DT_PIN = 26
 
+    pi = init_gpio(silent)
 
-def init_pwm(frequency: int, max_duty: int) -> GPIO.PWM:
-    GPIO_PIN = 12
-    GPIO.setup(GPIO_PIN, GPIO.OUT)
-    pwm = GPIO.PWM(GPIO_PIN, frequency)
-    pwm.start(max_duty)
-    return pwm
-
-
-class RotaryEncoder(object):
-    class State(Enum):
-        NoChange = auto()
-        Up = auto()
-        Down = auto()
-
-    CLK_PIN: int = 16
-    DT_PIN: int = 26
-    clk_last_state: bool = False
-
-    def __init__(self):
-        GPIO.setup(self.CLK_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(self.DT_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        self.clk_last_state = GPIO.input(self.CLK_PIN)
-
-    def poll(self, verbose: bool) -> State:
-        clk_state = GPIO.input(self.CLK_PIN)
-        dt_state = GPIO.input(self.DT_PIN)
-
-        if clk_state == self.clk_last_state:
-            return self.State.NoChange
-
-        if verbose:
-            print(f"Rotary encoder polled with state changed, last clk: {self.clk_last_state} clk: {clk_state} dt: {dt_state}")
-
-        direction = dt_state == clk_state
-        self.clk_last_state = clk_state
-
-        if direction:  # Good candidate for match case
-            return self.State.Down
-        else:
-            return self.State.Up
-
-
-class DisplayContent(object):
-    display: InkyWHAT = InkyWHAT("black")
-    image: Image = Image.new("P", (display.width, display.height))
-    draw: ImageDraw = ImageDraw.Draw(image)
-    FONT_SIZE: int = 24
-    font: ImageFont = ImageFont.truetype(SourceSansProSemibold, FONT_SIZE)
-
-    def draw_text(self, text: str):
-        x = 0
-        y = 0
-        self.draw.rectangle((0, 0, self.display.width, self.display.height), fill=(0, 0, 0, 0))
-        self.draw.multiline_text((x, y), text, fill=self.display.BLACK, font=self.font, align="left")
-        self.display.set_image(self.image)
-        self.display.show()
-
-
-def fan_controller(max_duty: int, min_duty: int, frequency: int, poll: float, increment: int, verbose: bool, silent: bool):
-    console = init_console()
-    init_gpio(silent)
-    duty_cycle = max_duty
-    pwm = init_pwm(frequency, duty_cycle)
-    encoder = RotaryEncoder()
-    display = DisplayContent()
+    fan = FanController(False, min_duty, max_duty, max_duty)
+    progress_bar = None if not graphical else ProgressBar()
+    if progress_bar is not None:
+        progress_bar.display_fan_speed(fan.duty_cycle)
+    pwm = PWMChannel(PWM_PIN, frequency, fan.duty_cycle, pi)
+    button = PowerButton(BUTTON_PIN, RELAY_PIN, fan, pi)
+    encoder = RotaryEncoder(CLK_PIN, DT_PIN, increment, fan, pwm, progress_bar, pi)
+    display = FanDisplay(refresh, fan)
 
     if verbose:
         print("System initialised")
 
     try:
-        with Progress(TextColumn("{task.description}"), BarColumn(), TaskProgressColumn(), console=console) as progress:
-            task = progress.add_task("[bold]Fan Speed[/bold]", total=100)
-
-            progress.update(task, completed=duty_cycle)
-            display.draw_text(f"Fan Speed: {duty_cycle}%")
-
-            while True:
-                state = encoder.poll(verbose)
-                if state == RotaryEncoder.State.Up:  # Good candidate for match case
-                    duty_cycle += increment
-                    if verbose:
-                        print(f"duty: {duty_cycle}")
-                    pwm.ChangeDutyCycle(duty_cycle)
-                    progress.update(task, completed=duty_cycle)
-                    display.draw_text(f"Fan Speed: {duty_cycle}%")
-                elif state == RotaryEncoder.State.Down:
-                    duty_cycle -= increment
-                    if verbose:
-                        print(f"duty: {duty_cycle}")
-                    pwm.ChangeDutyCycle(duty_cycle)
-                    progress.update(task, completed=duty_cycle)
-                    display.draw_text(f"Fan Speed: {duty_cycle}%")
-                sleep(poll)
-
+        while True:
+            button.wait_for_release(500)
     except KeyboardInterrupt:
         if verbose:
             print("Keyboard interrupt received")
     finally:
         if verbose:
             print("Cleaning up")
-        pwm.ChangeDutyCycle(0)
-        GPIO.cleanup()
+        if fan.enabled:
+            button.switch()
+        display.stop()
+        encoder.deactivate()
+        pi.stop()
 
 
 def main(argv: list[str]):
     parser = argparse.ArgumentParser(prog="Fan Controller", description="Controls fans")
-    parser.add_argument("-m", "--max", type=int, default=100, help="maximum duty cycle")
-    parser.add_argument("-n", "--min", type=int, default=20, help="minimum duty cycle")
+    parser.add_argument("-m", "--max", type=float, default=100, help="maximum duty cycle")
+    parser.add_argument("-n", "--min", type=float, default=20, help="minimum duty cycle")
     parser.add_argument("-f", "--frequency", type=int, default=25000, help="pwm frequency")
-    parser.add_argument("-p", "--poll", type=float, default=0.01, help="at which interval should the rotary encoder be polled")
-    parser.add_argument("-i", "--increment", type=int, default=5, help="increment to use when increasing/decreasing fan speed")
+    parser.add_argument("-r", "--refresh", type=float, default=0.5, help="at which interval should the screen be refreshed")
+    parser.add_argument("-i", "--increment", type=float, default=10, help="increment to use when increasing/decreasing fan speed")
     parser.add_argument("--verbose", type=bool, default=False, action=argparse.BooleanOptionalAction, help="increase verbosity")
     parser.add_argument("-s", "--silent", type=bool, default=False, action=argparse.BooleanOptionalAction, help="silence warnings")
+    parser.add_argument("-g", "--graphical", type=bool, default=False, action=argparse.BooleanOptionalAction, help="show a graphical indicator of fan speed")
     parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.0.0")
     args = parser.parse_args(argv)
 
-    fan_controller(args.max, args.min, args.frequency, args.poll, args.increment, args.verbose, args.silent)
+    fan_controller(args.max, args.min, args.frequency, args.refresh, args.increment, args.verbose, args.silent, args.graphical)
 
 
 if __name__ == "__main__":

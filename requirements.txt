@@ -1,5 +1,6 @@
 black
 pyright
 pytest
-inky[rpi,example-depends]
+inky[rpi]
 rich
+pigpio
