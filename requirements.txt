@@ -4,3 +4,4 @@ pytest
 inky[rpi]
 rich
 pigpio
+pillow
