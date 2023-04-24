@@ -161,3 +161,9 @@ cython_debug/
 
 # Fonts
 fonts/
+
+# VSCode stuff
+.vscode/
+
+# Generated stub files
+typings/

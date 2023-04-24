@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from time import sleep
 import sys
 import argparse
 from RotaryEncoder import RotaryEncoder
@@ -50,7 +49,7 @@ def fan_controller(max_duty: float, min_duty: float, frequency: int, refresh: fl
             button.switch()
         display.stop()
         encoder.deactivate()
-        pi.stop()
+        pi.stop()  # type: ignore
 
 
 def main(argv: list[str]):

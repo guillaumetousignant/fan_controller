@@ -7,10 +7,10 @@ from FanController import FanController
 
 class FanDisplay(object):
     display: InkyWHAT = None
-    image: Image = None
-    draw: ImageDraw = None
+    image: Image.Image = None
+    draw: ImageDraw.ImageDraw = None
     FONT_SIZE: int = 128
-    font: ImageFont = None
+    font: ImageFont.FreeTypeFont = None
     polling_rate: float = 0
     display_thread: threading.Thread = None
     running: bool = False
@@ -57,5 +57,5 @@ class FanDisplay(object):
         background_colour = self.display.BLACK if self.enabled else self.display.WHITE
         self.draw.rectangle((0, 0, self.display.width, self.display.height), fill=background_colour)
         self.draw.multiline_text((X, Y), text, fill=text_colour, font=self.font, align="left")
-        self.display.set_image(self.image)
+        self.display.set_image(self.image)  # type: ignore
         self.display.show()
