@@ -2,6 +2,7 @@ from inky import InkyWHAT
 from PIL import Image, ImageFont, ImageDraw
 import threading
 from time import sleep
+from pathlib import Path
 from FanController import FanController
 
 
@@ -18,11 +19,11 @@ class FanDisplay(object):
     enabled: bool = False
     fan: FanController = None
 
-    def __init__(self, polling_rate: float, fan: FanController):
+    def __init__(self, polling_rate: float, font_path: Path, fan: FanController):
         self.display = InkyWHAT("black")
-        self.image = Image.new("P", (self.display.width, self.display.height))
+        self.image = Image.new("P", (self.display.height, self.display.width))
         self.draw = ImageDraw.Draw(self.image)
-        self.font = ImageFont.truetype("fonts/scientifica.ttf", self.FONT_SIZE)
+        self.font = ImageFont.truetype(str(font_path), self.FONT_SIZE)
         self.polling_rate = polling_rate
         self.running = True
         self.fan = fan
@@ -55,7 +56,7 @@ class FanDisplay(object):
         Y = 0
         text_colour = self.display.WHITE if self.enabled else self.display.BLACK
         background_colour = self.display.BLACK if self.enabled else self.display.WHITE
-        self.draw.rectangle((0, 0, self.display.width, self.display.height), fill=background_colour)
+        self.draw.rectangle((0, 0) + self.image.size, fill=background_colour)
         self.draw.multiline_text((X, Y), text, fill=text_colour, font=self.font, align="left")
-        self.display.set_image(self.image)  # type: ignore
+        self.display.set_image(self.image.transpose(Image.Transpose.ROTATE_90))  # type: ignore  # type: ignore
         self.display.show()
