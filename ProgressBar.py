@@ -1,12 +1,9 @@
-from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TaskID
+from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn
 from rich.theme import Theme
 from rich.console import Console
 
 
 class ProgressBar(object):
-    progress: Progress = None
-    task: TaskID = None
-
     def __init__(self):
         custom_theme = Theme({"bar.finished": "cyan", "bar.complete": "cyan", "progress.percentage": "yellow"})
         console = Console(theme=custom_theme)

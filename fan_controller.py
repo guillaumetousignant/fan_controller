@@ -16,7 +16,9 @@ def init_gpio(silent: bool) -> pigpio.pi:
     return pigpio.pi()
 
 
-def fan_controller(max_duty: float, min_duty: float, frequency: int, refresh: float, increment: float, font_path: Path, verbose: bool, silent: bool, graphical: bool):
+def fan_controller(
+    max_duty: float, min_duty: float, frequency: int, refresh: float, increment: float, font_path: Path, verbose: bool, silent: bool, graphical: bool
+):
     PWM_PIN = 12
     BUTTON_PIN = 4
     RELAY_PIN = 6

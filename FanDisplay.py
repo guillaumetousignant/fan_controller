@@ -1,4 +1,4 @@
-from inky import InkyWHAT
+from inky import InkyWHAT  # type: ignore
 from PIL import Image, ImageFont, ImageDraw
 import threading
 from time import sleep
@@ -7,21 +7,16 @@ from FanController import FanController
 
 
 class FanDisplay(object):
-    display: InkyWHAT = None
-    image: Image.Image = None
-    draw: ImageDraw.ImageDraw = None
     FONT_SIZE: int = 128
-    font: ImageFont.FreeTypeFont = None
     polling_rate: float = 0
-    display_thread: threading.Thread = None
     running: bool = False
     duty_cycle: float = 0
     enabled: bool = False
-    fan: FanController = None
 
     def __init__(self, polling_rate: float, font_path: Path, fan: FanController):
-        self.display = InkyWHAT("black")
-        self.image = Image.new("P", (self.display.height, self.display.width))
+        self.display = InkyWHAT("black")  # type: ignore
+        size = int(self.display.height), int(self.display.width)  # type: ignore
+        self.image = Image.new("P", size)
         self.draw = ImageDraw.Draw(self.image)
         self.font = ImageFont.truetype(str(font_path), self.FONT_SIZE)
         self.polling_rate = polling_rate
@@ -54,9 +49,9 @@ class FanDisplay(object):
         text = f"{self.duty_cycle}%"
         X = 24
         Y = 0
-        text_colour = self.display.WHITE if self.enabled else self.display.BLACK
-        background_colour = self.display.BLACK if self.enabled else self.display.WHITE
-        self.draw.rectangle((0, 0) + self.image.size, fill=background_colour)
-        self.draw.multiline_text((X, Y), text, fill=text_colour, font=self.font, align="left")
-        self.display.set_image(self.image.transpose(Image.Transpose.ROTATE_90))  # type: ignore  # type: ignore
-        self.display.show()
+        text_colour = self.display.WHITE if self.enabled else self.display.BLACK  # type: ignore
+        background_colour = self.display.BLACK if self.enabled else self.display.WHITE  # type: ignore
+        self.draw.rectangle((0, 0) + self.image.size, fill=background_colour)  # type: ignore
+        self.draw.multiline_text((X, Y), text, fill=text_colour, font=self.font, align="left")  # type: ignore
+        self.display.set_image(self.image.transpose(Image.Transpose.ROTATE_90))  # type: ignore
+        self.display.show()  # type: ignore
