@@ -10,6 +10,7 @@ from PWMChannel import PWMChannel
 from ProgressBar import ProgressBar
 import pigpio
 from pathlib import Path
+from typing import Optional
 
 
 def init_gpio(silent: bool) -> pigpio.pi:
@@ -17,7 +18,7 @@ def init_gpio(silent: bool) -> pigpio.pi:
 
 
 def fan_controller(
-    max_duty: float, min_duty: float, frequency: int, refresh: float, increment: float, font_path: Path, verbose: bool, silent: bool, graphical: bool
+    max_duty: float, min_duty: float, frequency: int, refresh: float, increment: float, font_path: Optional[Path], verbose: bool, silent: bool, graphical: bool
 ):
     PWM_PIN = 12
     BUTTON_PIN = 4
@@ -62,7 +63,7 @@ def main(argv: list[str]):
     parser.add_argument("-e", "--frequency", type=int, default=25000, help="pwm frequency")
     parser.add_argument("-r", "--refresh", type=float, default=0.5, help="at which interval should the screen be refreshed")
     parser.add_argument("-i", "--increment", type=float, default=10, help="increment to use when increasing/decreasing fan speed")
-    parser.add_argument("-f", "--font", type=Path, default=Path("fonts") / "scientifica.ttf", help="font to use for the display")
+    parser.add_argument("-f", "--font", type=Path, help="font to use for the display")
     parser.add_argument("--verbose", type=bool, default=False, action=argparse.BooleanOptionalAction, help="increase verbosity")
     parser.add_argument("-s", "--silent", type=bool, default=False, action=argparse.BooleanOptionalAction, help="silence warnings")
     parser.add_argument("-g", "--graphical", type=bool, default=False, action=argparse.BooleanOptionalAction, help="show a graphical indicator of fan speed")

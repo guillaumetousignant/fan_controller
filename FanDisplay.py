@@ -3,7 +3,9 @@ from PIL import Image, ImageFont, ImageDraw
 import threading
 from time import sleep
 from pathlib import Path
+from typing import Optional
 from FanController import FanController
+from font_source_sans_pro import SourceSansProSemibold  # type: ignore
 
 
 class FanDisplay(object):
@@ -13,12 +15,15 @@ class FanDisplay(object):
     duty_cycle: float = 0
     enabled: bool = False
 
-    def __init__(self, polling_rate: float, font_path: Path, fan: FanController):
+    def __init__(self, polling_rate: float, font_path: Optional[Path], fan: FanController):
         self.display = InkyWHAT("black")  # type: ignore
         size = int(self.display.height), int(self.display.width)  # type: ignore
         self.image = Image.new("P", size)
         self.draw = ImageDraw.Draw(self.image)
-        self.font = ImageFont.truetype(str(font_path), self.FONT_SIZE)
+        if font_path is not None:
+            self.font = ImageFont.truetype(str(font_path), self.FONT_SIZE)
+        else:
+            self.font = ImageFont.truetype(SourceSansProSemibold, self.FONT_SIZE)  # type: ignore
         self.polling_rate = polling_rate
         self.running = True
         self.fan = fan
