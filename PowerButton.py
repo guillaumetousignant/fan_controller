@@ -21,6 +21,16 @@ class PowerButton(object):
         self.fan.enabled = not self.fan.enabled
         self.pi.write(self.relay_pin, not self.fan.enabled)  # type: ignore
 
+    def switch_on(self):
+        if not self.fan.enabled:
+            self.fan.enabled = True
+            self.pi.write(self.relay_pin, True)
+
+    def switch_off(self):
+        if self.fan.enabled:
+            self.fan.enabled = False
+            self.pi.write(self.relay_pin, False)
+
     def wait_for_release(self, timeout: Optional[int]) -> bool:
         if timeout is None:
             if self.pi.wait_for_edge(self.button_pin, pigpio.RISING_EDGE):  # type: ignore
