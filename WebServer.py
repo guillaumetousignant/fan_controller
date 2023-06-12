@@ -87,16 +87,18 @@ class WebServer(object):
         self.button = button
         self.pwm = pwm
         self.progress_bar = progress_bar
+
+        handler = partial(FanHTTPRequestHandler, self.fan, self.button, self.pwm, self.progress_bar)
+        self.httpd = HTTPServer(self.address, handler)
+
         self.web_server_thread = threading.Thread(target=self.web_server_main)
         self.web_server_thread.start()
 
     def stop(self):
         print("web server stopping")
         self.running = False
+        self.httpd.shutdown()
         self.web_server_thread.join()
 
     def web_server_main(self):
-        handler = partial(FanHTTPRequestHandler, self.fan, self.button, self.pwm, self.progress_bar)
-        httpd = HTTPServer(self.address, handler)
-        while self.running:
-            httpd.handle_request()
+        self.httpd.serve_forever()

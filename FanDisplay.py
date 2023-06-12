@@ -49,7 +49,7 @@ class FanDisplay(object):
             sleep(self.polling_rate)
 
     def draw_display(self):
-        text = f"{self.duty_cycle}%"
+        text = f"{int(self.duty_cycle)}%"
         X = 24
         Y = 0
         text_colour = self.display.WHITE if self.enabled else self.display.BLACK  # type: ignore
