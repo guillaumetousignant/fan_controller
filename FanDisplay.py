@@ -41,13 +41,11 @@ class FanDisplay(object):
         self.display_thread.join()
 
     def display_main(self):
-        while True:
+        while self.running:
             if self.fan.duty_cycle != self.duty_cycle or self.fan.enabled != self.enabled:
                 self.duty_cycle = self.fan.duty_cycle
                 self.enabled = self.fan.enabled
                 self.draw_display()
-            if not self.running:
-                break
             sleep(self.polling_rate)
 
     def draw_display(self):
@@ -58,5 +56,5 @@ class FanDisplay(object):
         background_colour = self.display.BLACK if self.enabled else self.display.WHITE  # type: ignore
         self.draw.rectangle((0, 0) + self.image.size, fill=background_colour)  # type: ignore
         self.draw.multiline_text((X, Y), text, fill=text_colour, font=self.font, align="left")  # type: ignore
-        self.display.set_image(self.image.transpose(Image.Transpose.ROTATE_90))  # type: ignore
+        self.display.set_image(self.image.transpose(2))  # type: ignore
         self.display.show()  # type: ignore
