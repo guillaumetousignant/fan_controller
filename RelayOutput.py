@@ -8,7 +8,7 @@ class RelayOutput(object):
         self.relay_pin = relay_pin
         self.pi = pi
         self.pi.set_mode(self.relay_pin, pigpio.OUTPUT)  # type: ignore
-        self.pi.write(self.relay_pin, enabled)  # type: ignore
+        self.pi.write(self.relay_pin, not enabled)  # type: ignore
 
     def turn_on(self):
         self.pi.write(self.relay_pin, False)  # type: ignore
