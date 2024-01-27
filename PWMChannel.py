@@ -7,8 +7,8 @@ class PWMChannel(object):
     min_duty: float = 0
     max_duty: float = 100
 
-    def get_duty(self, duty_cycle: float) ->int:
-        return int(duty_cycle/100 * (self.max_duty - self.min_duty) + self.min_duty)
+    def get_duty(self, duty_cycle: float) -> int:
+        return int(duty_cycle / 100 * (self.max_duty - self.min_duty) + self.min_duty)
 
     def __init__(self, pwm_pin: int, frequency: int, min_duty: float, max_duty: float, initial_duty: float, pi: pigpio.pi):
         self.pwm_pin = pwm_pin

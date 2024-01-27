@@ -33,6 +33,7 @@ class FanHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-type", "text/html")
             self.end_headers()
             self.wfile.write(b"404 - Not Found")
+
     def do_POST(self):
         if self.path == "/api/v1/on":
             if not self.fan.enabled:
@@ -74,6 +75,7 @@ class FanHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-type", "text/html")
             self.end_headers()
             self.wfile.write(b"404 - Not Found")
+
 
 class WebServer(object):
     running: bool = False

@@ -19,14 +19,23 @@ def init_gpio(silent: bool) -> pigpio.pi:
 
 
 def fan_controller(
-    max_duty: float, min_duty: float, frequency: int, refresh: float, increment: float, font_path: Optional[Path], verbose: bool, silent: bool, graphical: bool, http: bool
+    max_duty: float,
+    min_duty: float,
+    frequency: int,
+    refresh: float,
+    increment: float,
+    font_path: Optional[Path],
+    verbose: bool,
+    silent: bool,
+    graphical: bool,
+    http: bool,
 ):
     PWM_PIN = 12
     BUTTON_PIN = 4
     RELAY_PIN = 6
     CLK_PIN = 16
     DT_PIN = 26
-    WEB_SERVER_ADDRESS = ('', 4208)
+    WEB_SERVER_ADDRESS = ("", 4208)
 
     pi = init_gpio(silent)
 
@@ -72,7 +81,9 @@ def main(argv: list[str]):
     parser.add_argument("--verbose", type=bool, default=False, action=argparse.BooleanOptionalAction, help="increase verbosity")
     parser.add_argument("-s", "--silent", type=bool, default=False, action=argparse.BooleanOptionalAction, help="silence warnings")
     parser.add_argument("-g", "--graphical", type=bool, default=False, action=argparse.BooleanOptionalAction, help="show a graphical indicator of fan speed")
-    parser.add_argument("-w", "--web", type=bool, default=False, action=argparse.BooleanOptionalAction, help="start an http server to control and access the fan")
+    parser.add_argument(
+        "-w", "--web", type=bool, default=False, action=argparse.BooleanOptionalAction, help="start an http server to control and access the fan"
+    )
     parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.0.0")
     args = parser.parse_args(argv)
 
