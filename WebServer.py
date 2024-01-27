@@ -1,20 +1,16 @@
-from typing import Optional, Any
+from typing import Any
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from functools import partial
 import threading
 import json
-from FanController import FanController
-from PowerButton import PowerButton
-from PWMChannel import PWMChannel
-from ProgressBar import ProgressBar
+from PowerController import PowerController
+from SpeedController import SpeedController
 
 
 class FanHTTPRequestHandler(BaseHTTPRequestHandler):
-    def __init__(self, fan: FanController, button: PowerButton, pwm: PWMChannel, progress_bar: Optional[ProgressBar], *args: Any, **kwargs: Any):
-        self.fan = fan
-        self.button = button
-        self.pwm = pwm
-        self.progress_bar = progress_bar
+    def __init__(self, power: PowerController, speed: SpeedController, *args: Any, **kwargs: Any):
+        self.power = power
+        self.speed = speed
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
@@ -22,12 +18,17 @@ class FanHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"on": self.fan.enabled}).encode())
+            self.wfile.write(json.dumps({"on": self.power.enabled}).encode())
         elif self.path == "/api/v1/duty_cycle":
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"duty_cycle": self.fan.duty_cycle}).encode())
+            self.wfile.write(json.dumps({"duty_cycle": self.speed.duty_cycle}).encode())
+        elif self.path == "/api/v1/status":
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"on": self.power.enabled, "duty_cycle": self.speed.duty_cycle}).encode())
         else:
             self.send_response(404)
             self.send_header("Content-type", "text/html")
@@ -36,17 +37,15 @@ class FanHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         if self.path == "/api/v1/on":
-            if not self.fan.enabled:
-                self.button.switch()
+            self.power.turn_on()
             self.send_response(202)
             self.end_headers()
         elif self.path == "/api/v1/off":
-            if self.fan.enabled:
-                self.button.switch()
+            self.power.turn_off()
             self.send_response(202)
             self.end_headers()
         elif self.path == "/api/v1/toggle":
-            self.button.switch()
+            self.power.toggle()
             self.send_response(202)
             self.end_headers()
         elif self.path == "/api/v1/duty_cycle":
@@ -64,11 +63,7 @@ class FanHTTPRequestHandler(BaseHTTPRequestHandler):
                 length = int(content_length)
                 message = json.loads(self.rfile.read(length))
                 duty_cycle = float(message["duty_cycle"])
-                changed = self.fan.set_duty_cycle(duty_cycle)
-                if changed:
-                    self.pwm.set_duty_cycle(self.fan.duty_cycle)
-                    if self.progress_bar is not None:
-                        self.progress_bar.display_fan_speed(self.fan.duty_cycle)
+                self.speed.set_duty_cycle(duty_cycle)
 
                 self.send_response(202)
                 self.end_headers()
@@ -85,17 +80,12 @@ class FanHTTPRequestHandler(BaseHTTPRequestHandler):
 class WebServer(object):
     running: bool = False
     address: tuple[str, int] = ("", 4208)
-    progres_bar: Optional[ProgressBar] = None
 
-    def __init__(self, address: tuple[str, int], fan: FanController, button: PowerButton, pwm: PWMChannel, progress_bar: Optional[ProgressBar]):
+    def __init__(self, address: tuple[str, int], power: PowerController, speed: SpeedController):
         self.running = True
         self.address = address
-        self.fan = fan
-        self.button = button
-        self.pwm = pwm
-        self.progress_bar = progress_bar
 
-        handler = partial(FanHTTPRequestHandler, self.fan, self.button, self.pwm, self.progress_bar)
+        handler = partial(FanHTTPRequestHandler, power, speed)
         self.httpd = HTTPServer(self.address, handler)
 
         self.web_server_thread = threading.Thread(target=self.web_server_main)

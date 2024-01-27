@@ -5,8 +5,10 @@ import argparse
 from RotaryEncoder import RotaryEncoder
 from FanDisplay import FanDisplay
 from PowerButton import PowerButton
-from FanController import FanController
+from SpeedController import SpeedController
 from PWMChannel import PWMChannel
+from RelayOutput import RelayOutput
+from PowerController import PowerController
 from ProgressBar import ProgressBar
 from WebServer import WebServer
 import pigpio
@@ -36,18 +38,25 @@ def fan_controller(
     CLK_PIN = 16
     DT_PIN = 26
     WEB_SERVER_ADDRESS = ("", 4208)
+    INITIAL_POWER = False
+    INITIAL_DUTY_CYCLE = 100
 
     pi = init_gpio(silent)
 
-    fan = FanController(False, 100)
     progress_bar = None if not graphical else ProgressBar()
     if progress_bar is not None:
-        progress_bar.display_fan_speed(fan.duty_cycle)
-    pwm = PWMChannel(PWM_PIN, frequency, min_duty, max_duty, fan.duty_cycle, pi)
-    button = PowerButton(BUTTON_PIN, RELAY_PIN, fan, pi)
-    encoder = RotaryEncoder(CLK_PIN, DT_PIN, increment, fan, pwm, progress_bar, pi)
-    display = FanDisplay(refresh, font_path, fan)
-    web_server = None if not http else WebServer(WEB_SERVER_ADDRESS, fan, button, pwm, progress_bar)
+        progress_bar.display_fan_speed(INITIAL_DUTY_CYCLE)
+
+    pwm = PWMChannel(PWM_PIN, frequency, min_duty, max_duty, INITIAL_DUTY_CYCLE, pi)
+    speed = SpeedController(INITIAL_DUTY_CYCLE, pwm, progress_bar)
+    encoder = RotaryEncoder(CLK_PIN, DT_PIN, increment, speed, pi)
+
+    relay = RelayOutput(RELAY_PIN, INITIAL_POWER, pi)
+    power = PowerController(INITIAL_POWER, relay)
+    button = PowerButton(BUTTON_PIN, power, pi)
+
+    display = FanDisplay(refresh, font_path, power, speed)
+    web_server = None if not http else WebServer(WEB_SERVER_ADDRESS, power, speed)
 
     if verbose:
         print("System initialised")
@@ -61,8 +70,7 @@ def fan_controller(
     finally:
         if verbose:
             print("Cleaning up")
-        if fan.enabled:
-            button.switch()
+        power.turn_off()
         if web_server is not None:
             web_server.stop()
         display.stop()

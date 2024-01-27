@@ -4,7 +4,8 @@ import threading
 from time import sleep
 from pathlib import Path
 from typing import Optional
-from FanController import FanController
+from PowerController import PowerController
+from SpeedController import SpeedController
 from font_source_sans_pro import SourceSansProSemibold  # type: ignore
 
 
@@ -15,7 +16,7 @@ class FanDisplay(object):
     duty_cycle: float = 0
     enabled: bool = False
 
-    def __init__(self, polling_rate: float, font_path: Optional[Path], fan: FanController):
+    def __init__(self, polling_rate: float, font_path: Optional[Path], power: PowerController, speed: SpeedController):
         self.display = InkyWHAT("black")  # type: ignore
         size = int(self.display.height), int(self.display.width)  # type: ignore
         self.image = Image.new("P", size)
@@ -26,9 +27,10 @@ class FanDisplay(object):
             self.font = ImageFont.truetype(SourceSansProSemibold, self.FONT_SIZE)  # type: ignore
         self.polling_rate = polling_rate
         self.running = True
-        self.fan = fan
-        self.duty_cycle = fan.duty_cycle
-        self.enabled = fan.enabled
+        self.power = power
+        self.speed = speed
+        self.duty_cycle = speed.duty_cycle
+        self.enabled = power.enabled
 
         self.draw_display()
 
@@ -42,9 +44,9 @@ class FanDisplay(object):
 
     def display_main(self):
         while self.running:
-            if self.fan.duty_cycle != self.duty_cycle or self.fan.enabled != self.enabled:
-                self.duty_cycle = self.fan.duty_cycle
-                self.enabled = self.fan.enabled
+            if self.speed.duty_cycle != self.duty_cycle or self.power.enabled != self.enabled:
+                self.duty_cycle = self.speed.duty_cycle
+                self.enabled = self.power.enabled
                 self.draw_display()
             sleep(self.polling_rate)
 

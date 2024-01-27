@@ -1,7 +1,4 @@
-from typing import Optional
-from FanController import FanController
-from PWMChannel import PWMChannel
-from ProgressBar import ProgressBar
+from SpeedController import SpeedController
 import pigpio
 
 
@@ -9,19 +6,16 @@ class RotaryEncoder(object):
     clk_pin: int = 0
     dt_pin: int = 0
     increment: float = 0
-    progress_bar: Optional[ProgressBar] = None
     dt_status: bool = False
     clk_last_tick: int = 0
     dt_last_tick: int = 0
     DEBOUNCE_TICKS: int = 50
 
-    def __init__(self, clk_pin: int, dt_pin: int, increment: float, fan: FanController, pwm: PWMChannel, progress_bar: Optional[ProgressBar], pi: pigpio.pi):
+    def __init__(self, clk_pin: int, dt_pin: int, increment: float, speed: SpeedController, pi: pigpio.pi):
         self.clk_pin = clk_pin
         self.dt_pin = dt_pin
         self.increment = increment
-        self.fan = fan
-        self.pwm = pwm
-        self.progress_bar = progress_bar
+        self.speed = speed
         self.pi = pi
 
         self.pi.set_mode(self.clk_pin, pigpio.INPUT)  # type: ignore
@@ -43,11 +37,7 @@ class RotaryEncoder(object):
     def clk_callback_function(self, gpio: int, level: int, tick: int):
         if tick > self.clk_last_tick and (tick - self.clk_last_tick) > self.DEBOUNCE_TICKS:
             self.clk_last_tick = tick
-            changed = self.fan.increase_duty_cycle(self.increment) if self.dt_status else self.fan.decrease_duty_cycle(self.increment)
-            if changed:
-                self.pwm.set_duty_cycle(self.fan.duty_cycle)
-                if self.progress_bar is not None:
-                    self.progress_bar.display_fan_speed(self.fan.duty_cycle)
+            self.speed.increase_duty_cycle(self.increment) if self.dt_status else self.speed.decrease_duty_cycle(self.increment)
 
     def dt_callback_function(self, gpio: int, level: int, tick: int):
         if tick > self.dt_last_tick and (tick - self.dt_last_tick) > self.DEBOUNCE_TICKS:
