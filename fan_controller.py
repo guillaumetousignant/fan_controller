@@ -63,7 +63,7 @@ def fan_controller(
             print("Cleaning up")
         if fan.enabled:
             button.switch()
-        if http:
+        if web_server is not None:
             web_server.stop()
         display.stop()
         encoder.deactivate()
