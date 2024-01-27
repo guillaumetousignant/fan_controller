@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from functools import partial
 import threading
@@ -10,7 +10,7 @@ from ProgressBar import ProgressBar
 
 
 class FanHTTPRequestHandler(BaseHTTPRequestHandler):
-    def __init__(self, fan: FanController, button: PowerButton, pwm: PWMChannel, progress_bar: Optional[ProgressBar], *args, **kwargs):
+    def __init__(self, fan: FanController, button: PowerButton, pwm: PWMChannel, progress_bar: Optional[ProgressBar], *args: Any, **kwargs: Any):
         self.fan = fan
         self.button = button
         self.pwm = pwm
@@ -56,7 +56,12 @@ class FanHTTPRequestHandler(BaseHTTPRequestHandler):
                     self.send_response(415)
                     self.end_headers()
                     return
-                length = int(self.headers.get("content-length"))
+                content_length = self.headers.get("content-length")
+                if content_length is None:
+                    self.send_response(500)
+                    self.end_headers()
+                    return
+                length = int(content_length)
                 message = json.loads(self.rfile.read(length))
                 duty_cycle = float(message["duty_cycle"])
                 changed = self.fan.set_duty_cycle(duty_cycle)

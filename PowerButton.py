@@ -24,12 +24,12 @@ class PowerButton(object):
     def switch_on(self):
         if not self.fan.enabled:
             self.fan.enabled = True
-            self.pi.write(self.relay_pin, True)
+            self.pi.write(self.relay_pin, True)  # type: ignore
 
     def switch_off(self):
         if self.fan.enabled:
             self.fan.enabled = False
-            self.pi.write(self.relay_pin, False)
+            self.pi.write(self.relay_pin, False)  # type: ignore
 
     def wait_for_release(self, timeout: Optional[int]) -> bool:
         if timeout is None:
