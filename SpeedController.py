@@ -3,6 +3,10 @@ from ProgressBar import ProgressBar
 from typing import Optional, Callable
 
 
+def do_nothing(duty_cycle: float):
+    pass
+
+
 class SpeedController(object):
     duty_cycle: float = 0
     progress_bar: Optional[ProgressBar] = None
@@ -11,10 +15,7 @@ class SpeedController(object):
         self.duty_cycle = duty_cycle
         self.pwm = pwm
         self.progress_bar = progress_bar
-        self.communicate_callback = self.do_nothing
-
-    def do_nothing(duty_cycle: float):
-        pass
+        self.communicate_callback = do_nothing
 
     def set_communicate_callback(self, communicate_callback: Callable[[float], None]):
         self.communicate_callback = communicate_callback

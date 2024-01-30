@@ -110,7 +110,21 @@ def main(argv: list[str]):
     parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.0.0")
     args = parser.parse_args(argv)
 
-    fan_controller(args.max, args.min, args.frequency, args.refresh, args.increment, args.font, args.client_id, args.broker, args.password_file, args.verbose, args.silent, args.graphical, args.web)
+    fan_controller(
+        args.max,
+        args.min,
+        args.frequency,
+        args.refresh,
+        args.increment,
+        args.font,
+        args.client_id,
+        args.broker,
+        args.password_file,
+        args.verbose,
+        args.silent,
+        args.graphical,
+        args.web,
+    )
 
 
 if __name__ == "__main__":

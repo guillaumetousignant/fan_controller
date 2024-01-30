@@ -3,6 +3,7 @@ from PowerController import PowerController
 from SpeedController import SpeedController
 from pathlib import Path
 
+
 class MQTTCommunicator(object):
     client_id: str = ""
     message_broker: str = ""
@@ -65,4 +66,4 @@ class MQTTCommunicator(object):
         self.client.publish(f"{self.client_id}/on/state", "ON" if power else "OFF", qos=0, retain=True)
 
     def communicate_speed(self, duty_cycle: float):
-        self.client.publish(f"{self.client_id}/speed/percentage_state", str(int(duty_cycle)),qos=0, retain=True)
+        self.client.publish(f"{self.client_id}/speed/percentage_state", str(int(duty_cycle)), qos=0, retain=True)

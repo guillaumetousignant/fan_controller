@@ -2,16 +2,17 @@ from RelayOutput import RelayOutput
 from typing import Callable
 
 
+def do_nothing(enabled: bool):
+    pass
+
+
 class PowerController(object):
     enabled: bool = False
 
     def __init__(self, enabled: bool, relay: RelayOutput):
         self.enabled = enabled
         self.relay = relay
-        self.communicate_callback = self.do_nothing
-
-    def do_nothing(enabled: bool):
-        pass
+        self.communicate_callback = do_nothing
 
     def set_communicate_callback(self, communicate_callback: Callable[[bool], None]):
         self.communicate_callback = communicate_callback
