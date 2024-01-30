@@ -51,7 +51,7 @@ class MQTTCommunicator(object):
         except ValueError:
             print(f'Received unknown set_speed with topic "{message.topic}" and message "{message.payload}"')
             return
-        self.speed.set_duty_cycle(float(message.payload))
+        self.speed.set_duty_cycle(duty_cycle)
 
     def on_disconnect(self, client: mqtt.Client, userdata, rc):
         client.publish(f"{self.client_id}/availability/state", "offline", qos=1, retain=True)
