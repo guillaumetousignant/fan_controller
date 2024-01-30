@@ -16,7 +16,7 @@ class MQTTCommunicator(object):
         self.client = mqtt.Client(client_id=self.client_id)
 
         password = ""
-        with open(password_file) as f:
+        with open(password_file, "r") as f:
             password = f.read().strip()
         self.client.username_pw_set(client_id, password)
 
@@ -27,7 +27,7 @@ class MQTTCommunicator(object):
         self.client.connect(self.message_broker)
         self.client.loop_start()
 
-    def on_connect(self, client, userdata, flags, rc):
+    def on_connect(self, client: mqtt.Client, userdata, flags, rc):
         client.subscribe(f"{self.client_id}/on/set", qos=0)
         client.subscribe(f"{self.client_id}/speed/percentage", qos=0)
 
@@ -36,7 +36,7 @@ class MQTTCommunicator(object):
 
         client.publish(f"{self.client_id}/availability/state", "online", qos=1, retain=True)
 
-    def set_power(self, client, userdata, message):
+    def set_power(self, client: mqtt.Client, userdata, message: mqtt.MQTTMessage):
         if message.payload == b"ON":
             self.power.turn_on()
         elif message.payload == b"OFF":
@@ -44,7 +44,7 @@ class MQTTCommunicator(object):
         else:
             print(f'Received unknown set_power with topic "{message.topic}" and message "{message.payload}"')
 
-    def set_speed(self, client, userdata, message):
+    def set_speed(self, client: mqtt.Client, userdata, message: mqtt.MQTTMessage):
         duty_cycle = 0
         try:
             duty_cycle = float(message.payload)
@@ -53,10 +53,10 @@ class MQTTCommunicator(object):
             return
         self.speed.set_duty_cycle(float(message.payload))
 
-    def on_disconnect(self, client, userdata, rc):
+    def on_disconnect(self, client: mqtt.Client, userdata, rc):
         client.publish(f"{self.client_id}/availability/state", "offline", qos=1, retain=True)
 
-    def on_message(self, client, userdata, message):
+    def on_message(self, client: mqtt.Client, userdata, message: mqtt.MQTTMessage):
         print(f'Received unknown message with topic "{message.topic}" and message "{message.payload}"')
 
     def stop(self):
