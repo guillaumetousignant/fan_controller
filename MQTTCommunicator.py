@@ -45,7 +45,7 @@ class MQTTCommunicator(object):
             print(f'Received unknown set_power with topic "{message.topic}" and message "{message.payload}"')
 
     def set_speed(self, client: mqtt.Client, userdata, message: mqtt.MQTTMessage):
-        duty_cycle = 0
+        duty_cycle = 0.0
         try:
             duty_cycle = float(message.payload)
         except ValueError:
