@@ -7,6 +7,6 @@ Type=simple
 Restart=always
 RestartSec=2
 User=pi
-ExecStart=/usr/bin/python3 /home/pi/Code/fan_controller/fan_controller.py --min 10 --web
+ExecStart=/usr/bin/python3 /home/pi/Code/fan_controller/fan_controller.py --min 10 --broker homeassistant --client-id cuisine_fan
 [Install]
 WantedBy=multi-user.target

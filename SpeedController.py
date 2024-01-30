@@ -1,6 +1,6 @@
 from PWMChannel import PWMChannel
 from ProgressBar import ProgressBar
-from typing import Optional
+from typing import Optional, Callable
 
 
 class SpeedController(object):
@@ -11,6 +11,16 @@ class SpeedController(object):
         self.duty_cycle = duty_cycle
         self.pwm = pwm
         self.progress_bar = progress_bar
+        self.communicate_callback = self.do_nothing
+
+    def do_nothing(duty_cycle: float):
+        pass
+
+    def set_communicate_callback(self, communicate_callback: Callable[[float], None]):
+        self.communicate_callback = communicate_callback
+
+    def communicate_speed(self):
+        self.communicate_callback(self.duty_cycle)
 
     def apply_duty_cycle(self):
         self.pwm.set_duty_cycle(self.duty_cycle)
@@ -21,14 +31,18 @@ class SpeedController(object):
         if self.duty_cycle < 100 and increment != 0:
             self.duty_cycle = min(self.duty_cycle + increment, 100)
             self.apply_duty_cycle()
+            self.communicate_speed()
             return True
+        self.communicate_speed()
         return False
 
     def decrease_duty_cycle(self, decrement: float) -> bool:
         if self.duty_cycle > 0 and decrement != 0:
             self.duty_cycle = max(self.duty_cycle - decrement, 0)
             self.apply_duty_cycle()
+            self.communicate_speed()
             return True
+        self.communicate_speed()
         return False
 
     def set_duty_cycle(self, duty_cycle: float) -> bool:
@@ -36,5 +50,7 @@ class SpeedController(object):
         if new_duty_cycle != self.duty_cycle:
             self.duty_cycle = new_duty_cycle
             self.apply_duty_cycle()
+            self.communicate_speed()
             return True
+        self.communicate_speed()
         return False

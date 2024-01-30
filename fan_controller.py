@@ -11,9 +11,11 @@ from RelayOutput import RelayOutput
 from PowerController import PowerController
 from ProgressBar import ProgressBar
 from WebServer import WebServer
+from MQTTCommunicator import MQTTCommunicator
 import pigpio
 from pathlib import Path
 from typing import Optional
+from pathlib import Path
 
 
 def init_gpio(silent: bool) -> pigpio.pi:
@@ -27,6 +29,9 @@ def fan_controller(
     refresh: float,
     increment: float,
     font_path: Optional[Path],
+    client_id: str,
+    broker: Optional[str],
+    password_file: Path,
     verbose: bool,
     silent: bool,
     graphical: bool,
@@ -57,6 +62,11 @@ def fan_controller(
 
     display = FanDisplay(refresh, font_path, power, speed)
     web_server = None if not http else WebServer(WEB_SERVER_ADDRESS, power, speed)
+    mqtt_communicator = None if not broker else MQTTCommunicator(client_id, broker, power, speed, password_file)
+
+    if mqtt_communicator is not None:
+        speed.set_communicate_callback(mqtt_communicator.communicate_speed)
+        power.set_communicate_callback(mqtt_communicator.communicate_power)
 
     if verbose:
         print("System initialised")
@@ -73,6 +83,8 @@ def fan_controller(
         power.turn_off()
         if web_server is not None:
             web_server.stop()
+        if mqtt_communicator is not None:
+            mqtt_communicator.stop()
         display.stop()
         encoder.deactivate()
         pi.stop()  # type: ignore
@@ -80,12 +92,15 @@ def fan_controller(
 
 def main(argv: list[str]):
     parser = argparse.ArgumentParser(prog="Fan Controller", description="Controls fans")
-    parser.add_argument("-m", "--max", type=float, default=100, help="maximum duty cycle in %")
-    parser.add_argument("-n", "--min", type=float, default=20, help="minimum duty cycle in %")
+    parser.add_argument("-m", "--max", type=float, default=100, help="maximum duty cycle in %%")
+    parser.add_argument("-n", "--min", type=float, default=20, help="minimum duty cycle in %%")
     parser.add_argument("-e", "--frequency", type=int, default=25000, help="pwm frequency")
     parser.add_argument("-r", "--refresh", type=float, default=0.5, help="at which interval should the screen be refreshed in seconds")
-    parser.add_argument("-i", "--increment", type=float, default=10, help="increment to use when increasing/decreasing fan speed in %")
+    parser.add_argument("-i", "--increment", type=float, default=10, help="increment to use when increasing/decreasing fan speed in %%")
     parser.add_argument("-f", "--font", type=Path, help="font to use for the display")
+    parser.add_argument("-c", "--client-id", type=str, default="fan-controller", help="client id to use for MQTT")
+    parser.add_argument("-b", "--broker", type=str, help="address and port of the MQTT message broker")
+    parser.add_argument("-p", "--password-file", type=Path, default=Path(".password"), help="path to the file containing the MQTT broker password")
     parser.add_argument("--verbose", type=bool, default=False, action=argparse.BooleanOptionalAction, help="increase verbosity")
     parser.add_argument("-s", "--silent", type=bool, default=False, action=argparse.BooleanOptionalAction, help="silence warnings")
     parser.add_argument("-g", "--graphical", type=bool, default=False, action=argparse.BooleanOptionalAction, help="show a graphical indicator of fan speed")
@@ -95,7 +110,7 @@ def main(argv: list[str]):
     parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.0.0")
     args = parser.parse_args(argv)
 
-    fan_controller(args.max, args.min, args.frequency, args.refresh, args.increment, args.font, args.verbose, args.silent, args.graphical, args.web)
+    fan_controller(args.max, args.min, args.frequency, args.refresh, args.increment, args.font, args.client_id, args.broker, args.password_file, args.verbose, args.silent, args.graphical, args.web)
 
 
 if __name__ == "__main__":

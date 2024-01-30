@@ -167,3 +167,6 @@ fonts/
 
 # Generated stub files
 typings/
+
+# Passwords
+.password
