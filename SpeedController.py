@@ -1,6 +1,5 @@
 from PWMChannel import PWMChannel
-from ProgressBar import ProgressBar
-from typing import Optional, Callable
+from typing import Callable
 
 
 def do_nothing_float(duty_cycle: float):
@@ -9,12 +8,10 @@ def do_nothing_float(duty_cycle: float):
 
 class SpeedController(object):
     duty_cycle: float = 0
-    progress_bar: Optional[ProgressBar] = None
 
-    def __init__(self, duty_cycle: float, pwm: PWMChannel, progress_bar: Optional[ProgressBar]):
+    def __init__(self, duty_cycle: float, pwm: PWMChannel):
         self.duty_cycle = duty_cycle
         self.pwm = pwm
-        self.progress_bar = progress_bar
         self.communicate_callback = do_nothing_float
 
     def set_communicate_callback(self, communicate_callback: Callable[[float], None]):
@@ -25,8 +22,6 @@ class SpeedController(object):
 
     def apply_duty_cycle(self):
         self.pwm.set_duty_cycle(self.duty_cycle)
-        if self.progress_bar is not None:
-            self.progress_bar.display_fan_speed(self.duty_cycle)
 
     def increase_duty_cycle(self, increment: float) -> bool:
         if self.duty_cycle < 100 and increment != 0:

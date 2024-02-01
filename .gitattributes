@@ -1,4 +1,5 @@
 .gitignore linguist-vendored
+fan_controller.service linguist-vendored
 pyproject.toml linguist-vendored
 requirements.txt linguist-vendored
 LICENSE linguist-vendored

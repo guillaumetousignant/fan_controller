@@ -2,7 +2,6 @@ black
 pyright
 pytest
 inky[rpi]
-rich
 pigpio
 pillow
 font_source_sans_pro
