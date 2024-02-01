@@ -29,12 +29,14 @@ class MQTTCommunicator(object):
         self.client.loop_start()
 
     def on_connect(self, client: mqtt.Client, userdata: Any, flags: dict[str, Any], rc: int):
-        client.subscribe([(f"{self.client_id}/on/set", 0), ("{self.client_id}/speed/percentage", 0)])
+        client.subscribe([(f"{self.client_id}/on/set", 0), (f"{self.client_id}/speed/percentage", 0)])
 
         client.message_callback_add(f"{self.client_id}/on/set", self.set_power)
         client.message_callback_add(f"{self.client_id}/speed/percentage", self.set_speed)
 
         client.publish(f"{self.client_id}/availability/state", "online", qos=1, retain=True)
+        self.client.publish(f"{self.client_id}/on/state", "ON" if self.power.enabled else "OFF", qos=0, retain=True)
+        self.client.publish(f"{self.client_id}/speed/percentage_state", str(int(self.speed.duty_cycle)), qos=0, retain=True)
 
     def set_power(self, client: mqtt.Client, userdata: Any, message: mqtt.MQTTMessage):
         if message.payload == b"ON":
@@ -57,6 +59,7 @@ class MQTTCommunicator(object):
         print(f'Received unknown message with topic "{message.topic}" and message "{message.payload}"')
 
     def stop(self):
+        self.client.publish(f"{self.client_id}/on/state", "OFF", qos=0, retain=True)
         self.client.publish(f"{self.client_id}/availability/state", "offline", qos=1, retain=True)
         self.client.loop_stop()
         self.client.disconnect()  # Not sure if needed
